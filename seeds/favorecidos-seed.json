@@ -1,0 +1,31 @@
+[
+  {
+    "nome": "RAUL THEVENET PAIVA ADVOGADOS ASSOCIADOS",
+    "tipoDocumento": "CNPJ",
+    "documento": "20.482.384/0001-33",
+    "status": "Ativo",
+    "contas": [
+      {"bancoNome":"Caixa Econômica Federal","bancoCodigo":"104","agencia":"0526","operacaoProduto":"1292","conta":"000578458371-5","statusValidacao":"Pendente","contaPreferencial":true}
+    ]
+  },
+  {
+    "nome": "ANTONIO CARLOS AGUIAR SCHILLING",
+    "tipoDocumento": "CPF",
+    "documento": "281.356.790-68",
+    "status": "Revisar",
+    "contas": [
+      {"bancoNome":"Banco do Brasil","bancoCodigo":"001","agencia":"0653-X","conta":"5504-2","tipoConta":"Corrente","statusValidacao":"Revisar"},
+      {"bancoNome":"Caixa Econômica Federal","bancoCodigo":"104","agencia":"0514","operacaoProduto":"3701","conta":"000584611247-8","statusValidacao":"Revisar"}
+    ]
+  },
+  {
+    "nome": "PAULO DALLÉ",
+    "tipoDocumento": "CPF",
+    "documento": "240.312.910-00",
+    "status": "Revisar",
+    "contas": [
+      {"bancoNome":"Banco do Brasil","bancoCodigo":"001","agencia":"2797-9","conta":"32201-6","tipoConta":"Corrente","statusValidacao":"Revisar"},
+      {"bancoNome":"Caixa Econômica Federal","bancoCodigo":"104","agencia":"0431","operacaoProduto":"3701","conta":"000584669134-6","statusValidacao":"Revisar"}
+    ]
+  }
+]

@@ -1,0 +1,121 @@
+[
+  {
+    "nome": "CELOMAR PACHECO LOPES",
+    "tipoCadastro": "Outros",
+    "tipoDocumento": "CPF",
+    "documento": "251.932.950-53",
+    "status": "Revisar",
+    "situacaoEspecial": "SUCESSAO",
+    "observacaoOperacional": "Alvará para sucessão de Celomar Pacheco Lopes, na pessoa da viúva Maria Luíza Lopes.",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "2867",
+        "conta": "1166-5",
+        "contaNumero": "1166",
+        "contaDigito": "5",
+        "tipoConta": "Corrente",
+        "contaPreferencial": true,
+        "titularConfirmado": true,
+        "titularContaNome": "MARIA LUÍZA LOPES",
+        "titularTipoDocumento": "CPF",
+        "titularContaDocumento": "749.249.310-04",
+        "statusValidacao": "Revisar",
+        "fonte": "Casos especiais - peritos agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "IVO VICTORIO CESCA",
+    "tipoCadastro": "Outros",
+    "tipoDocumento": "CPF",
+    "documento": "080.958.170-15",
+    "status": "Revisar",
+    "situacaoEspecial": "SUCESSAO",
+    "observacaoOperacional": "Transferir para o Processo de Inventário nº 0301912-93.2018.8.24.0030, em trâmite na 1ª Vara Cível da Comarca de Imbituba/TJSC. Há referência adicional a CPF da sucessão 339.303.090-68.",
+    "contas": []
+  },
+  {
+    "nome": "JACOB COSTER",
+    "tipoCadastro": "Outros",
+    "tipoDocumento": "CPF",
+    "documento": "000.628.040-49",
+    "status": "Revisar",
+    "situacaoEspecial": "SUCESSAO",
+    "observacaoOperacional": "CPF da sucessão em nome de Maria Margarete Rios Coster.",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "4736",
+        "conta": "805016-3",
+        "contaNumero": "805016",
+        "contaDigito": "3",
+        "tipoConta": "Corrente",
+        "contaPreferencial": true,
+        "titularConfirmado": true,
+        "titularContaNome": "MARIA MARGARETE RIOS COSTER",
+        "titularTipoDocumento": "CPF",
+        "titularContaDocumento": "397.331.220-68",
+        "statusValidacao": "Revisar",
+        "fonte": "Casos especiais - peritos agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "WILSON VALENTE DA COSTA",
+    "tipoCadastro": "Outros",
+    "tipoDocumento": "CPF",
+    "documento": "005.948.900-63",
+    "status": "Revisar",
+    "situacaoEspecial": "INVENTARIANTE",
+    "observacaoOperacional": "Pagamento na pessoa da inventariante Sra. Maria de Fátima da Costa Magrini.",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0526",
+        "operacaoProduto": "013",
+        "conta": "00055823-2",
+        "contaNumero": "00055823",
+        "contaDigito": "2",
+        "tipoConta": "Poupança",
+        "contaPreferencial": true,
+        "titularConfirmado": true,
+        "titularContaNome": "MARIA DE FÁTIMA DA COSTA MAGRINI",
+        "titularTipoDocumento": "CPF",
+        "titularContaDocumento": "810.490.300-44",
+        "statusValidacao": "Revisar",
+        "fonte": "Casos especiais - peritos agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "RUY TELLECHEA",
+    "tipoCadastro": "Outros",
+    "tipoDocumento": "CPF",
+    "documento": "039.643.450-91",
+    "status": "Revisar",
+    "situacaoEspecial": "ALVARA_TERCEIRO",
+    "observacaoOperacional": "Pagamento por alvará na pessoa do inventariante Sr. Ricardo Luzardo Paiva.",
+    "contas": [
+      {
+        "bancoNome": "Unicred",
+        "bancoCodigo": "136",
+        "agencia": "2130",
+        "conta": "44587-8",
+        "contaNumero": "44587",
+        "contaDigito": "8",
+        "tipoConta": "Corrente",
+        "contaPreferencial": true,
+        "titularConfirmado": true,
+        "titularContaNome": "RICARDO LUZARDO PAIVA",
+        "titularTipoDocumento": "CNPJ",
+        "titularContaDocumento": "26.147.139/0001-56",
+        "statusValidacao": "Revisar",
+        "fonte": "Casos especiais - peritos agosto/2026"
+      }
+    ]
+  }
+]

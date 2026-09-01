@@ -1,0 +1,175 @@
+[
+  {
+    "nome": "ANDERSON FIGUEIREDO MENDES",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "085.672.156-50",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "0103-1",
+        "conta": "20990-2",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "ANGELO MARCELO ZANOTELLI GABRIEL",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "676.404.600-00",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "5972-2",
+        "conta": "6376-2",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "CARLOS FREDERICK SIGNORETTI ALFARO",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "902.696.160-04",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0526",
+        "operacaoProduto": "001",
+        "conta": "00028598-4",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "JAMES VILLELA CLAUS",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "476.374.390-20",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "0045-0",
+        "conta": "27054-7",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "JORGE LUIS DARDE RIBEIRO",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "253.855.340-72",
+    "status": "Pendente validação",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "0045-0",
+        "conta": "22678-5",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "JOSE LUIZ DA SILVA RODRIGUES",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "228.335.520-68",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0526",
+        "operacaoProduto": "001",
+        "conta": "33213-3",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "LUIZ ALBERTO BAYLE BIDART",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "226.428.970-87",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0505",
+        "operacaoProduto": "013",
+        "conta": "1872-1",
+        "tipoConta": "Poupança",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "MARIO HENRIQUE BENITES PEDELHES",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "561.923.390-15",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banrisul",
+        "bancoCodigo": "041",
+        "agencia": "0430",
+        "conta": "358221010-3",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "RITA EVALDT",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "900.325.270-04",
+    "status": "Pendente validação",
+    "contas": []
+  },
+  {
+    "nome": "ROSANGELA SACHE DA SILVA",
+    "tipoCadastro": "Perito",
+    "tipoDocumento": "CPF",
+    "documento": "260.363.710-04",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "0045-0",
+        "conta": "15713-9",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  }
+]

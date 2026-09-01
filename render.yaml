@@ -1,0 +1,40 @@
+services:
+  # ---------------------------------------------------------------------------
+  # Backend API - NestJS
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: trt4-favorecidos-api
+    runtime: node
+    plan: free
+    region: oregon # ou ohio / frankfurt
+    rootDir: apps/api
+    buildCommand: npm install && npx prisma generate && npm run build
+    preDeployCommand: npx prisma db push --accept-data-loss
+    startCommand: npm run start
+    healthCheckPath: /favorecidos/stats
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+
+  # ---------------------------------------------------------------------------
+  # Frontend Web - Next.js
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: trt4-favorecidos-web
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: apps/web
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        sync: false

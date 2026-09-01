@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production & Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment & Credentials files (CRÍTICO: nunca comitar chaves e credenciais)
+.env
+.env*.local
+.env.development
+.env.production
+.env.staging
+!.env.example
+!apps/*/.env.example
+*.txt
+*.pem
+*.key
+credentials/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Prisma & DB
+dev.db
+dev.db-journal
+
+# OS & Temp
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+backups/
+tmp/
+temp/

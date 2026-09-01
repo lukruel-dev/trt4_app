@@ -1,0 +1,192 @@
+[
+  {
+    "nome": "ALEXANDRE BORGES BOELTER",
+    "tipoDocumento": "CPF",
+    "documento": "446.239.090-34",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Sicredi",
+        "bancoCodigo": "748",
+        "agencia": "0155",
+        "conta": "44331-7",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "CARLA ROBERTA CARDOZO",
+    "tipoDocumento": "CPF",
+    "documento": "611.840.470-49",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0530",
+        "operacaoProduto": "1288",
+        "conta": "000816759199-7",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "JAIME CEZAR CHARÃO DA SILVEIRA",
+    "tipoDocumento": "CPF",
+    "documento": "429.599.770-68",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "0045-0",
+        "conta": "8695-9",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "LUÍS PEREIRA LIMA LOPES",
+    "tipoDocumento": "CPF",
+    "documento": "269.765.870-04",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banrisul",
+        "bancoCodigo": "041",
+        "agencia": "0621",
+        "conta": "351511680-4",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "MARCELO FADANELLI RAMOS",
+    "tipoDocumento": "CPF",
+    "documento": "387.129.380-68",
+    "status": "Revisar",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "2716",
+        "conta": "00000735-4",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "MARCOS VINICIUS MENEZES QUADROS",
+    "tipoDocumento": "CPF",
+    "documento": "445.664.170-34",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0526",
+        "operacaoProduto": "001",
+        "conta": "18522-0",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "OSVALDO RIOS VILLAS BOAS",
+    "tipoDocumento": "CPF",
+    "documento": "175.095.480-04",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banco do Brasil",
+        "bancoCodigo": "001",
+        "agencia": "2893-2",
+        "conta": "108217-5",
+        "tipoConta": "Poupança",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "SERGIO MOACIR RODRIGUES DE OLIVEIRA",
+    "tipoDocumento": "CPF",
+    "documento": "432.141.930-15",
+    "status": "Revisar",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0511",
+        "operacaoProduto": "1288",
+        "conta": "0811444057-9",
+        "tipoConta": "Poupança",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "SILVANA CARDOSO SILVEIRA",
+    "tipoDocumento": "CPF",
+    "documento": "929.191.540-87",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0929",
+        "operacaoProduto": "1288",
+        "conta": "000810357608-3",
+        "tipoConta": "Poupança",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "VERA REGINA MESSINA DOS SANTOS",
+    "tipoDocumento": "CPF",
+    "documento": "700.815.140-34",
+    "status": "Ativo",
+    "contas": [
+      {
+        "bancoNome": "Banrisul",
+        "bancoCodigo": "041",
+        "agencia": "0230",
+        "conta": "350503830-0",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  },
+  {
+    "nome": "VICENTE DALLA VECCHIA DALLÉ",
+    "tipoDocumento": "CPF",
+    "documento": "009.419.590-07",
+    "status": "Revisar",
+    "contas": [
+      {
+        "bancoNome": "Caixa Econômica Federal",
+        "bancoCodigo": "104",
+        "agencia": "0437",
+        "conta": "29868-3",
+        "tipoConta": "Corrente",
+        "statusValidacao": "Pendente",
+        "fonte": "ODT agosto/2026"
+      }
+    ]
+  }
+]
