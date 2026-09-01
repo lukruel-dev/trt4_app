@@ -6,17 +6,19 @@
     "apps/web"
   ],
   "scripts": {
-    "postinstall": "npx prisma generate --schema=apps/api/prisma/schema.prisma",
     "dev:api": "npm --workspace apps/api run start:dev",
     "dev:web": "npm --workspace apps/web run dev",
     "build:api": "npm --workspace apps/api run build",
     "build:web": "npm --workspace apps/web run build",
     "start:api": "npm --workspace apps/api run start",
     "start:web": "npm --workspace apps/web run start",
-    "prisma:push": "npx prisma db push --schema=apps/api/prisma/schema.prisma",
-    "prisma:deploy": "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma"
+    "prisma:generate": "prisma generate --schema=apps/api/prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema=apps/api/prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema=apps/api/prisma/schema.prisma"
   },
   "dependencies": {
-    "dotenv": "^17.4.2"
+    "@prisma/client": "^6.15.0",
+    "dotenv": "^16.4.7",
+    "prisma": "^6.15.0"
   }
 }
