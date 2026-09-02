@@ -45,5 +45,10 @@ services:
         sync: false
       - key: AUTH_TRUST_HOST
         value: "true"
+      - key: AUTH_URL
+        value: "https://trt4-favorecidos-web.onrender.com"
+      - key: NEXTAUTH_URL
+        value: "https://trt4-favorecidos-web.onrender.com"
+
 
 
