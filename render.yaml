@@ -37,3 +37,10 @@ services:
         value: production
       - key: NEXT_PUBLIC_API_URL
         sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: AUTH_GOOGLE_ID
+        sync: false
+      - key: AUTH_GOOGLE_SECRET
+        sync: false
+

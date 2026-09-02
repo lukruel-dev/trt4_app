@@ -1,6 +1,7 @@
 'use client';
 
 import { CSSProperties, ReactNode, useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -144,6 +145,7 @@ function shouldShowTitularFields(form: any) {
 }
 
 export default function Home() {
+  const { data: session } = useSession();
   const [items, setItems] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [tipo, setTipo] = useState<typeof tipos[number]>('Todos');
@@ -440,6 +442,71 @@ export default function Home() {
         </div>
 
         <div style={styles.headerActions}>
+          {session?.user && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '6px 14px',
+                borderRadius: 12,
+                border: `1px solid ${colors.border}`,
+                background: colors.surfaceOffset,
+              }}
+            >
+              {session.user.image ? (
+                <img
+                  src={session.user.image}
+                  alt={session.user.name || 'Usuário'}
+                  style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: colors.primary,
+                    color: colors.primaryText,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  {(session.user.name || session.user.email || 'U')[0].toUpperCase()}
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', fontSize: 12 }}>
+                <span style={{ fontWeight: 600, color: colors.text }}>
+                  {session.user.name || 'Servidor TRT4'}
+                </span>
+                <span style={{ fontSize: 11, color: colors.muted }}>
+                  {session.user.email}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                style={{
+                  background: 'transparent',
+                  border: `1px solid ${colors.dangerBorder}`,
+                  color: colors.dangerText,
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  marginLeft: 4,
+                }}
+                title="Sair da conta"
+              >
+                Sair
+              </button>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={toggleTheme}
