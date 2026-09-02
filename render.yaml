@@ -43,4 +43,7 @@ services:
         sync: false
       - key: AUTH_GOOGLE_SECRET
         sync: false
+      - key: AUTH_TRUST_HOST
+        value: "true"
+
 

@@ -12,7 +12,7 @@ function LoginContent() {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      await signIn('google', { callbackUrl: '/' });
+      await signIn('google', { redirectTo: '/' });
     } catch (err) {
       console.error('Erro ao iniciar login:', err);
       setLoading(false);
