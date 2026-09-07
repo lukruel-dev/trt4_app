@@ -22,7 +22,7 @@ services:
         sync: false
 
   # ---------------------------------------------------------------------------
-  # Frontend Web - Next.js
+  # Full-Stack Web - Next.js (com API routes e Prisma integrados)
   # ---------------------------------------------------------------------------
   - type: web
     name: trt4-favorecidos-web
@@ -30,12 +30,15 @@ services:
     plan: free
     region: oregon
     rootDir: apps/web
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
     startCommand: npm run start
+    healthCheckPath: /api/favorecidos/stats
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NEXT_PUBLIC_API_URL
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
         sync: false
       - key: AUTH_SECRET
         sync: false

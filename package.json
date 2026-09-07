@@ -17,7 +17,7 @@
     "prisma:deploy": "prisma migrate deploy --schema=apps/api/prisma/schema.prisma"
   },
   "dependencies": {
-    "@prisma/client": "^6.15.0",
+    "@prisma/client": "^6.19.3",
     "dotenv": "^16.4.7",
     "prisma": "^6.15.0"
   }

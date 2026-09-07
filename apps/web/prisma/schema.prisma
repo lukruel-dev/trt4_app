@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Favorecido {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome                  String          @db.VarChar(255)
+  tipoCadastro          String?         @map("tipo_cadastro") @db.VarChar(30)
+  tipoDocumento         String          @map("tipo_documento") @db.VarChar(10)
+  documento             String          @db.VarChar(32)
+  status                String          @default("Ativo") @db.VarChar(30)
+  situacaoEspecial      String?         @map("situacao_especial") @db.VarChar(40)
+  observacaoOperacional String?         @map("observacao_operacional") @db.VarChar(500)
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  contas                ContaBancaria[]
+
+  @@unique([documento, nome], map: "ux_favorecidos_documento_nome")
+  @@map("favorecidos")
+}
+
+model ContaBancaria {
+  id                     String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  favorecidoId           String     @map("favorecido_id") @db.Uuid
+  bancoNome              String?    @map("banco_nome") @db.VarChar(120)
+  bancoCodigo            String?    @map("banco_codigo") @db.VarChar(10)
+  agencia                String?    @db.VarChar(20)
+  operacaoProduto        String?    @map("operacao_produto") @db.VarChar(20)
+  conta                  String?    @db.VarChar(40)
+  contaNumero            String?    @map("conta_numero") @db.VarChar(40)
+  contaDigito            String?    @map("conta_digito") @db.VarChar(10)
+  tipoConta              String?    @map("tipo_conta") @db.VarChar(30)
+  contaPreferencial      Boolean    @default(false) @map("conta_preferencial")
+  titularConfirmado      Boolean    @default(false) @map("titular_confirmado")
+  titularContaNome       String?    @map("titular_conta_nome") @db.VarChar(255)
+  titularContaDocumento  String?    @map("titular_conta_documento") @db.VarChar(32)
+  titularTipoDocumento   String?    @map("titular_tipo_documento") @db.VarChar(10)
+  statusValidacao        String     @default("Pendente") @map("status_validacao") @db.VarChar(30)
+  fonte                  String?    @default("Documento original") @db.VarChar(100)
+  createdAt              DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  favorecido             Favorecido @relation(fields: [favorecidoId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([favorecidoId], map: "ix_contas_favorecido")
+  @@map("contas_bancarias")
+}
+
+model audit_events {
+  id          BigInt   @id @default(autoincrement())
+  entity_type String   @db.VarChar(50)
+  entity_id   String   @db.Uuid
+  event_type  String   @db.VarChar(10)
+  actor_id    String?  @db.VarChar(120)
+  occurred_at DateTime @default(now()) @db.Timestamptz(6)
+  before_data Json?
+  after_data  Json?
+  notes       String?
+}
