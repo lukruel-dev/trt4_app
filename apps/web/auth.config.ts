@@ -22,9 +22,9 @@ export const authConfig = {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isLoginPage = nextUrl.pathname.startsWith('/login');
-      const isAuthApi = nextUrl.pathname.startsWith('/api/auth');
+      const isApiRoute = nextUrl.pathname.startsWith('/api/');
 
-      if (isAuthApi) return true;
+      if (isApiRoute) return true;
 
       if (!isLoggedIn && !isLoginPage) {
         return false; // Automatically redirects to /login

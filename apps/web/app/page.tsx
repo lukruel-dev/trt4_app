@@ -3,7 +3,7 @@
 import { CSSProperties, ReactNode, useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_URL = '/api';
 
 const tipos = ['Todos', 'Advogado', 'Associação', 'Perito', 'Outros'] as const;
 const situacoesEspeciais = [
