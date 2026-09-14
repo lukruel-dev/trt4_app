@@ -259,23 +259,36 @@ export async function POST(request: NextRequest) {
         situacaoEspecial: body.situacaoEspecial || null,
         observacaoOperacional: body.observacaoOperacional || null,
         contas: {
-          create: (body.contas || []).map((conta: any) => ({
-            bancoNome: conta.bancoNome || null,
-            bancoCodigo: conta.bancoCodigo || null,
-            agencia: conta.agencia || null,
-            operacaoProduto: conta.operacaoProduto || null,
-            conta: conta.conta || null,
-            contaNumero: conta.contaNumero || null,
-            contaDigito: conta.contaDigito || null,
-            tipoConta: conta.tipoConta || null,
-            contaPreferencial: !!conta.contaPreferencial,
-            titularConfirmado: !!conta.titularConfirmado,
-            titularContaNome: conta.titularContaNome || null,
-            titularContaDocumento: conta.titularContaDocumento || null,
-            titularTipoDocumento: conta.titularTipoDocumento || null,
-            statusValidacao: conta.statusValidacao || 'Pendente',
-            fonte: conta.fonte || 'Cadastro manual',
-          })),
+          create: (body.contas || []).map((conta: any) => {
+            let numConta = (conta.conta || conta.contaNumero || '').trim();
+            let digito = (conta.contaDigito || '').trim();
+
+            if (numConta.includes('-')) {
+              const parts = numConta.split('-');
+              numConta = parts[0].trim();
+              if (!digito && parts[1]) {
+                digito = parts[1].trim();
+              }
+            }
+
+            return {
+              bancoNome: conta.bancoNome || null,
+              bancoCodigo: conta.bancoCodigo || null,
+              agencia: conta.agencia || null,
+              operacaoProduto: conta.operacaoProduto || null,
+              conta: numConta || null,
+              contaNumero: numConta || null,
+              contaDigito: digito || null,
+              tipoConta: conta.tipoConta || null,
+              contaPreferencial: !!conta.contaPreferencial,
+              titularConfirmado: !!conta.titularConfirmado,
+              titularContaNome: conta.titularContaNome || null,
+              titularContaDocumento: conta.titularContaDocumento || null,
+              titularTipoDocumento: conta.titularTipoDocumento || null,
+              statusValidacao: conta.statusValidacao || 'Pendente',
+              fonte: conta.fonte || 'Cadastro manual',
+            };
+          }),
         },
       },
       include: {

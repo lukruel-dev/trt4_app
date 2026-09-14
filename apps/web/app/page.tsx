@@ -1,6 +1,6 @@
 'use client';
 
-import { CSSProperties, ReactNode, useEffect, useState } from 'react';
+import { CSSProperties, ReactNode, useEffect, useRef, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 
 const API_URL = '/api';
@@ -57,16 +57,23 @@ const emptyCounters: Counters = {
   Outros: 0,
 };
 
-function normalizeConta(conta: any = {}) {
+function normalizeConta(conta: any) {
+  const raw = (conta.contaNumero || conta.conta || '').trim();
+  const contaLimpa = raw.includes('-') ? raw.split('-')[0].trim() : raw;
+  const digitoDetectado =
+    !conta.contaDigito && raw.includes('-')
+      ? raw.split('-')[1]?.trim()
+      : conta.contaDigito ?? '';
+
   return {
-    id: conta.id ?? '',
+    id: conta.id,
     bancoNome: conta.bancoNome ?? '',
     bancoCodigo: conta.bancoCodigo ?? '',
     agencia: conta.agencia ?? '',
     operacaoProduto: conta.operacaoProduto ?? '',
-    conta: conta.conta ?? '',
-    contaNumero: conta.contaNumero ?? '',
-    contaDigito: conta.contaDigito ?? '',
+    conta: contaLimpa,
+    contaNumero: contaLimpa,
+    contaDigito: digitoDetectado,
     tipoConta: conta.tipoConta ?? '',
     contaPreferencial: !!conta.contaPreferencial,
     titularConfirmado: !!conta.titularConfirmado,
@@ -99,17 +106,30 @@ function buildPayload(form: any) {
     ...form,
     situacaoEspecial: form.situacaoEspecial || null,
     observacaoOperacional: form.observacaoOperacional?.trim() || null,
-    contas: (form.contas || []).map((conta: any) => ({
-      ...conta,
-      conta: conta.conta?.trim() || null,
-      contaNumero: conta.contaNumero?.trim() || null,
-      contaDigito: conta.contaDigito?.trim() || null,
-      titularContaNome: conta.titularContaNome?.trim() || null,
-      titularContaDocumento: conta.titularContaDocumento?.trim() || null,
-      titularTipoDocumento: conta.titularContaDocumento
-        ? conta.titularTipoDocumento || 'CPF'
-        : null,
-    })),
+    contas: (form.contas || []).map((conta: any) => {
+      let numConta = (conta.conta || conta.contaNumero || '').trim();
+      let digito = (conta.contaDigito || '').trim();
+
+      if (numConta.includes('-')) {
+        const parts = numConta.split('-');
+        numConta = parts[0].trim();
+        if (!digito && parts[1]) {
+          digito = parts[1].trim();
+        }
+      }
+
+      return {
+        ...conta,
+        conta: numConta || null,
+        contaNumero: numConta || null,
+        contaDigito: digito || null,
+        titularContaNome: conta.titularContaNome?.trim() || null,
+        titularContaDocumento: conta.titularContaDocumento?.trim() || null,
+        titularTipoDocumento: conta.titularContaDocumento
+          ? conta.titularTipoDocumento || 'CPF'
+          : null,
+      };
+    }),
   };
 }
 
@@ -137,7 +157,14 @@ function getBadgeText(item: any) {
 }
 
 function getContaApresentacao(conta: any) {
-  return conta.conta || conta.contaNumero || '—';
+  const raw = (conta.contaNumero || conta.conta || '').trim();
+  if (!raw) return '—';
+
+  if (raw.includes('-')) {
+    return raw.split('-')[0].trim() || raw;
+  }
+
+  return raw;
 }
 
 function shouldShowTitularFields(form: any) {
@@ -155,6 +182,21 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState<Theme>('light');
   const [counters, setCounters] = useState<Counters>(emptyCounters);
+  const [toast, setToast] = useState<{
+    message: string;
+    type?: 'success' | 'error';
+  } | null>(null);
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  function showToast(message: string, type: 'success' | 'error' = 'success') {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    setToast({ message, type });
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, 2000);
+  }
 
   const colors = theme === 'dark' ? darkColors : lightColors;
   const styles = makeStyles(colors);
@@ -304,10 +346,29 @@ export default function Home() {
   function updateConta(index: number, field: string, value: any) {
     setForm((previous: any) => {
       const contas = [...previous.contas];
-      contas[index] = {
-        ...contas[index],
-        [field]: value,
-      };
+      if (field === 'conta') {
+        const raw = String(value ?? '');
+        if (raw.includes('-')) {
+          const [num, dig] = raw.split('-');
+          contas[index] = {
+            ...contas[index],
+            conta: num.trim(),
+            contaNumero: num.trim(),
+            contaDigito: contas[index].contaDigito || (dig ? dig.trim() : ''),
+          };
+        } else {
+          contas[index] = {
+            ...contas[index],
+            conta: raw,
+            contaNumero: raw,
+          };
+        }
+      } else {
+        contas[index] = {
+          ...contas[index],
+          [field]: value,
+        };
+      }
 
       return {
         ...previous,
@@ -406,9 +467,9 @@ export default function Home() {
   async function copy(text: string, label: string) {
     try {
       await navigator.clipboard.writeText(text || '');
-      alert(`${label} copiado.`);
+      showToast(`${label} copiado!`);
     } catch {
-      alert(`Não foi possível copiar ${label.toLowerCase()}.`);
+      showToast(`Não foi possível copiar ${label.toLowerCase()}.`, 'error');
     }
   }
 
@@ -627,14 +688,6 @@ export default function Home() {
                       <div style={styles.resultDocument}>
                         {item.tipoDocumento} {item.documento || 'Não informado'}
                       </div>
-
-                      {item.situacaoEspecial ? (
-                        <div style={styles.specialBadgeRow}>
-                          <span style={styles.specialBadge}>
-                            {formatSituacaoEspecial(item.situacaoEspecial)}
-                          </span>
-                        </div>
-                      ) : null}
                     </div>
 
                     <span
@@ -1075,16 +1128,6 @@ export default function Home() {
                       />
                     </Field>
 
-                    <Field label="Número da conta (legado)" styles={styles}>
-                      <input
-                        value={conta.contaNumero ?? ''}
-                        onChange={(event) =>
-                          updateConta(index, 'contaNumero', event.target.value)
-                        }
-                        style={styles.input}
-                      />
-                    </Field>
-
                     <Field label="Dígito da conta" styles={styles}>
                       <input
                         value={conta.contaDigito ?? ''}
@@ -1242,6 +1285,71 @@ export default function Home() {
           </section>
         </div>
       )}
+
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '12px 20px',
+            borderRadius: 12,
+            background:
+              toast.type === 'error'
+                ? '#ef4444'
+                : theme === 'dark'
+                  ? '#1e293b'
+                  : '#0f172a',
+            color: '#ffffff',
+            fontSize: 14,
+            fontWeight: 600,
+            boxShadow:
+              '0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.2)',
+            border: `1px solid ${
+              theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'
+            }`,
+            animation: 'toastFadeIn 0.2s ease-out',
+            pointerEvents: 'none',
+          }}
+        >
+          {toast.type === 'error' ? (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          ) : (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#10b981"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          )}
+          <span>{toast.message}</span>
+        </div>
+      )}
     </main>
   );
 }
@@ -1274,6 +1382,14 @@ function CopyField({
   onCopy: () => void;
   styles: ReturnType<typeof makeStyles>;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    onCopy();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <div style={styles.infoBox}>
       <div style={styles.fieldLabel}>{label}</div>
@@ -1281,8 +1397,22 @@ function CopyField({
       <div style={styles.copyFieldContent}>
         <div style={styles.fieldValue}>{value}</div>
 
-        <button type="button" onClick={onCopy} style={styles.copyBtn}>
-          Copiar
+        <button
+          type="button"
+          onClick={handleCopy}
+          style={{
+            ...styles.copyBtn,
+            ...(copied
+              ? {
+                  background: '#10b981',
+                  color: '#ffffff',
+                  borderColor: '#10b981',
+                }
+              : {}),
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {copied ? 'Copiado!' : 'Copiar'}
         </button>
       </div>
     </div>
@@ -1878,6 +2008,17 @@ const responsiveCss = `
   @media (max-width: 390px) {
     .search-grid > div:last-child {
       grid-template-columns: 1fr;
+    }
+  }
+
+  @keyframes toastFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
   }
 `;

@@ -33,7 +33,27 @@ export async function PATCH(
         },
       });
 
-      const recebidas = Array.isArray(body.contas) ? body.contas : [];
+      const recebidas = (Array.isArray(body.contas) ? body.contas : []).map(
+        (conta: any) => {
+          let numConta = (conta.conta || conta.contaNumero || '').trim();
+          let digito = (conta.contaDigito || '').trim();
+
+          if (numConta.includes('-')) {
+            const parts = numConta.split('-');
+            numConta = parts[0].trim();
+            if (!digito && parts[1]) {
+              digito = parts[1].trim();
+            }
+          }
+
+          return {
+            ...conta,
+            conta: numConta || null,
+            contaNumero: numConta || null,
+            contaDigito: digito || null,
+          };
+        },
+      );
       const recebidasComId = recebidas.filter((conta: any) => conta.id);
       const idsMantidos = new Set(
         recebidasComId.map((conta: any) => conta.id),

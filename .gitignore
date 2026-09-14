@@ -8,6 +8,7 @@ dist/
 build/
 .next/
 out/
+*.tsbuildinfo
 
 # Environment & Credentials files (CRÍTICO: nunca comitar chaves e credenciais)
 .env
