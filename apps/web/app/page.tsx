@@ -182,6 +182,9 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState<Theme>('light');
   const [counters, setCounters] = useState<Counters>(emptyCounters);
+  const [bancosList, setBancosList] = useState<
+    Array<{ code: string; name: string; fullName: string; ispb: string }>
+  >([]);
   const [toast, setToast] = useState<{
     message: string;
     type?: 'success' | 'error';
@@ -308,6 +311,24 @@ export default function Home() {
 
   useEffect(() => {
     loadCounters();
+  }, []);
+
+  useEffect(() => {
+    async function loadBancos() {
+      try {
+        const response = await fetch(`${API_URL}/bancos`);
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            setBancosList(data);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar lista de bancos do Bacen:', error);
+      }
+    }
+
+    loadBancos();
   }, []);
 
   function openNew() {
@@ -1074,25 +1095,26 @@ export default function Home() {
                   </div>
 
                   <div style={styles.formGrid} className="form-grid">
-                    <Field label="Banco" styles={styles}>
-                      <input
-                        value={conta.bancoNome ?? ''}
-                        onChange={(event) =>
-                          updateConta(index, 'bancoNome', event.target.value)
-                        }
-                        style={styles.input}
-                      />
-                    </Field>
-
-                    <Field label="Código do banco" styles={styles}>
-                      <input
-                        value={conta.bancoCodigo ?? ''}
-                        onChange={(event) =>
-                          updateConta(index, 'bancoCodigo', event.target.value)
-                        }
-                        style={styles.input}
-                      />
-                    </Field>
+                    <BancoField
+                      bancoNome={conta.bancoNome ?? ''}
+                      bancoCodigo={conta.bancoCodigo ?? ''}
+                      onChangeNome={(val) => updateConta(index, 'bancoNome', val)}
+                      onChangeCodigo={(val) => updateConta(index, 'bancoCodigo', val)}
+                      onSelectBanco={(nome, codigo) => {
+                        setForm((prev: any) => {
+                          const contas = [...prev.contas];
+                          contas[index] = {
+                            ...contas[index],
+                            bancoNome: nome,
+                            bancoCodigo: codigo,
+                          };
+                          return { ...prev, contas };
+                        });
+                      }}
+                      bancosList={bancosList}
+                      styles={styles}
+                      colors={colors}
+                    />
 
                     <Field label="Agência" styles={styles}>
                       <input
@@ -1416,6 +1438,230 @@ function CopyField({
         </button>
       </div>
     </div>
+  );
+}
+
+function BancoField({
+  bancoNome,
+  bancoCodigo,
+  onChangeNome,
+  onChangeCodigo,
+  onSelectBanco,
+  bancosList,
+  styles,
+  colors,
+}: {
+  bancoNome: string;
+  bancoCodigo: string;
+  onChangeNome: (val: string) => void;
+  onChangeCodigo: (val: string) => void;
+  onSelectBanco: (nome: string, codigo: string) => void;
+  bancosList: Array<{ code: string; name: string; fullName: string; ispb: string; alias?: string }>;
+  styles: ReturnType<typeof makeStyles>;
+  colors: typeof lightColors;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  function normalize(str: string) {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
+
+  const query = normalize(searchTerm.trim() || bancoNome.trim());
+  const isQueryNumeric = /^\d+$/.test(query);
+
+  const filteredBancos = query
+    ? bancosList
+        .filter((b) => {
+          if (isQueryNumeric) {
+            return b.code.includes(query);
+          }
+          return (
+            b.code.includes(query) ||
+            normalize(b.name).includes(query) ||
+            normalize(b.fullName).includes(query) ||
+            normalize(b.alias || '').includes(query)
+          );
+        })
+        .slice(0, 15)
+    : bancosList.slice(0, 12);
+
+  function handleSelect(banco: { code: string; name: string; fullName: string }) {
+    const nome = banco.fullName || banco.name;
+    onSelectBanco(nome, banco.code);
+    setSearchTerm('');
+    setIsOpen(false);
+  }
+
+  function handleCodigoChange(codigo: string) {
+    onChangeCodigo(codigo);
+    const clean = codigo.trim().padStart(3, '0');
+    const matched = bancosList.find((b) => b.code === clean || b.code === codigo.trim());
+    if (matched && (!bancoNome || bancoNome === '')) {
+      onChangeNome(matched.fullName || matched.name);
+    }
+  }
+
+  return (
+    <>
+      <div style={{ ...styles.fieldWrapper, position: 'relative' }} ref={wrapperRef}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={styles.label}>Banco</span>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: colors.primary,
+              letterSpacing: 0.2,
+            }}
+          >
+            Lista Banco Central
+          </span>
+        </div>
+
+        <input
+          value={isOpen ? (searchTerm !== '' ? searchTerm : bancoNome) : (bancoNome ?? '')}
+          onFocus={() => {
+            setSearchTerm(bancoNome);
+            setIsOpen(true);
+          }}
+          onChange={(e) => {
+            const val = e.target.value;
+            setSearchTerm(val);
+            onChangeNome(val);
+            if (!isOpen) setIsOpen(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setIsOpen(false);
+            }
+          }}
+          placeholder="Pesquise por nome ou código (ex: 341, Itaú, 104, Caixa...)"
+          style={styles.input}
+          autoComplete="off"
+        />
+
+        {isOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 4px)',
+              left: 0,
+              right: 0,
+              maxHeight: 250,
+              overflowY: 'auto',
+              background: colors.surface,
+              border: `1px solid ${colors.borderStrong}`,
+              borderRadius: 14,
+              boxShadow: '0 12px 28px rgba(0,0,0,0.22)',
+              zIndex: 100,
+              padding: '6px',
+            }}
+          >
+            <div
+              style={{
+                padding: '6px 10px',
+                fontSize: 11,
+                color: colors.muted,
+                borderBottom: `1px solid ${colors.border}`,
+                marginBottom: 4,
+                display: 'flex',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>Instituições autorizadas pelo Banco Central</span>
+              <span>{filteredBancos.length} encontrada(s)</span>
+            </div>
+
+            {filteredBancos.length === 0 ? (
+              <div
+                style={{
+                  padding: '12px 10px',
+                  color: colors.muted,
+                  fontSize: 13,
+                  textAlign: 'center',
+                }}
+              >
+                Nenhum banco encontrado com "{searchTerm}".<br />
+                <span style={{ fontSize: 11 }}>Você pode continuar com a digitação livre.</span>
+              </div>
+            ) : (
+              filteredBancos.map((b) => (
+                <div
+                  key={b.code + b.ispb}
+                  onClick={() => handleSelect(b)}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    fontSize: 13,
+                    transition: 'background 120ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = colors.surfaceOffset;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  }}
+                >
+                  <span
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      background: colors.tagBg,
+                      color: colors.tagText,
+                      fontWeight: 800,
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {b.code}
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                    <span style={{ fontWeight: 700, color: colors.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {b.fullName}
+                    </span>
+                    {b.name !== b.fullName && (
+                      <span style={{ fontSize: 11, color: colors.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {b.name}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      <Field label="Código do banco" styles={styles}>
+        <input
+          value={bancoCodigo ?? ''}
+          onChange={(event) => handleCodigoChange(event.target.value)}
+          placeholder="Ex: 001, 104, 341..."
+          style={styles.input}
+        />
+      </Field>
+    </>
   );
 }
 

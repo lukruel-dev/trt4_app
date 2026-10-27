@@ -17,6 +17,35 @@ type StatsResult = {
   Outros: number;
 };
 
+function buildAccentInsensitiveRegex(term: string): string {
+  const accentMap: Record<string, string> = {
+    a: '[aàáâãäåā]',
+    e: '[eèéêëē]',
+    i: '[iìíîïī]',
+    o: '[oòóôõöøō]',
+    u: '[uùúûüū]',
+    c: '[cç]',
+    n: '[nñ]',
+    y: '[yýÿ]',
+  };
+  const normalized = term
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  let regex = '';
+  for (const char of normalized) {
+    if (accentMap[char]) {
+      regex += accentMap[char];
+    } else if (/[.*+?^${}()|[\]\\]/.test(char)) {
+      regex += '\\' + char;
+    } else {
+      regex += char;
+    }
+  }
+  return regex;
+}
+
 @Injectable()
 export class FavorecidosService {
   constructor(private readonly prisma: PrismaService) {}
@@ -24,122 +53,26 @@ export class FavorecidosService {
   async list(filters: ListFilters) {
     const search = filters.search?.trim() || '';
     const numericSearch = search.replace(/\D/g, '');
-    const and: Prisma.FavorecidoWhereInput[] = [];
 
-    if (search) {
-      const searchOr: Prisma.FavorecidoWhereInput[] = [
-        {
-          nome: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          documento: {
-            contains: search,
-          },
-        },
-        {
-          contas: {
-            some: {
-              bancoNome: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-          },
-        },
-        {
-          contas: {
-            some: {
-              agencia: {
-                contains: search,
-              },
-            },
-          },
-        },
-        {
-          contas: {
-            some: {
-              conta: {
-                contains: search,
-              },
-            },
-          },
-        },
-        {
-          contas: {
-            some: {
-              contaNumero: {
-                contains: search,
-              },
-            },
-          },
-        },
-        {
-          contas: {
-            some: {
-              contaDigito: {
-                contains: search,
-              },
-            },
-          },
-        },
-        {
-          contas: {
-            some: {
-              titularContaNome: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            },
-          },
-        },
-        {
-          contas: {
-            some: {
-              titularContaDocumento: {
-                contains: search,
-              },
-            },
-          },
-        },
-        {
-          observacaoOperacional: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-      ];
-
-      and.push({
-        OR: searchOr,
-      });
-    }
+    const andFilters: Prisma.FavorecidoWhereInput[] = [];
 
     if (filters.tipo && filters.tipo !== 'Todos') {
-      and.push({
-        tipoCadastro: filters.tipo,
-      });
+      andFilters.push({ tipoCadastro: filters.tipo });
     }
 
     if (filters.status && filters.status !== 'Todos') {
-      and.push({
-        status: filters.status,
-      });
+      andFilters.push({ status: filters.status });
     }
 
     if (
       filters.situacaoEspecial &&
       filters.situacaoEspecial !== 'Todas'
     ) {
-      and.push({
-        situacaoEspecial: filters.situacaoEspecial,
-      });
+      andFilters.push({ situacaoEspecial: filters.situacaoEspecial });
     }
 
     if (filters.onlyReview) {
-      and.push({
+      andFilters.push({
         contas: {
           some: {
             statusValidacao: 'Pendente',
@@ -148,15 +81,103 @@ export class FavorecidosService {
       });
     }
 
-    const where: Prisma.FavorecidoWhereInput =
-      and.length > 0
-        ? {
-            AND: and,
-          }
-        : {};
+    if (!search) {
+      return this.prisma.favorecido.findMany({
+        where: andFilters.length > 0 ? { AND: andFilters } : {},
+        include: { contas: true },
+        orderBy: { nome: 'asc' },
+      });
+    }
 
-    const resultadosPadrao = await this.prisma.favorecido.findMany({
-      where,
+    const matchedIds = new Set<string>();
+
+    const searchOr: Prisma.FavorecidoWhereInput[] = [
+      { nome: { contains: search, mode: 'insensitive' } },
+      { documento: { contains: search } },
+      { contas: { some: { bancoNome: { contains: search, mode: 'insensitive' } } } },
+      { contas: { some: { agencia: { contains: search } } } },
+      { contas: { some: { conta: { contains: search } } } },
+      { contas: { some: { contaNumero: { contains: search } } } },
+      { contas: { some: { contaDigito: { contains: search } } } },
+      { contas: { some: { titularContaNome: { contains: search, mode: 'insensitive' } } } },
+      { contas: { some: { titularContaDocumento: { contains: search } } } },
+      { observacaoOperacional: { contains: search, mode: 'insensitive' } },
+    ];
+
+    const prismaExact = await this.prisma.favorecido.findMany({
+      where: {
+        AND: [...andFilters, { OR: searchOr }],
+      },
+      select: { id: true },
+    });
+    for (const item of prismaExact) {
+      matchedIds.add(item.id);
+    }
+
+    try {
+      const unaccentResults = await this.prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT DISTINCT f.id
+        FROM favorecidos f
+        LEFT JOIN contas_bancarias c ON c.favorecido_id = f.id
+        WHERE
+          unaccent(f.nome) ILIKE unaccent(${`%${search}%`})
+          OR unaccent(COALESCE(c.banco_nome, '')) ILIKE unaccent(${`%${search}%`})
+          OR unaccent(COALESCE(c.titular_conta_nome, '')) ILIKE unaccent(${`%${search}%`})
+          OR unaccent(COALESCE(f.observacao_operacional, '')) ILIKE unaccent(${`%${search}%`})
+      `;
+      for (const item of unaccentResults) {
+        matchedIds.add(item.id);
+      }
+    } catch {
+      const regexPattern = buildAccentInsensitiveRegex(search);
+      const regexResults = await this.prisma.$queryRaw<Array<{ id: string }>>`
+        SELECT DISTINCT f.id
+        FROM favorecidos f
+        LEFT JOIN contas_bancarias c ON c.favorecido_id = f.id
+        WHERE
+          f.nome ~* ${regexPattern}
+          OR COALESCE(c.banco_nome, '') ~* ${regexPattern}
+          OR COALESCE(c.titular_conta_nome, '') ~* ${regexPattern}
+          OR COALESCE(f.observacao_operacional, '') ~* ${regexPattern}
+      `;
+      for (const item of regexResults) {
+        matchedIds.add(item.id);
+      }
+    }
+
+    if (numericSearch) {
+      try {
+        const docResults = await this.prisma.$queryRaw<Array<{ id: string }>>`
+          SELECT DISTINCT f.id
+          FROM favorecidos f
+          LEFT JOIN contas_bancarias c ON c.favorecido_id = f.id
+          WHERE
+            regexp_replace(f.documento, '\\D', '', 'g') LIKE ${`%${numericSearch}%`}
+            OR regexp_replace(COALESCE(c.titular_conta_documento, ''), '\\D', '', 'g') LIKE ${`%${numericSearch}%`}
+        `;
+        for (const item of docResults) {
+          matchedIds.add(item.id);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar documento por regex numérica:', err);
+      }
+    }
+
+    if (matchedIds.size === 0) {
+      return [];
+    }
+
+    const finalFavorecidos = await this.prisma.favorecido.findMany({
+      where: {
+        AND: [
+          ...andFilters,
+          {
+            id: {
+              in: Array.from(matchedIds),
+            },
+          },
+        ],
+      },
       include: {
         contas: true,
       },
@@ -165,92 +186,8 @@ export class FavorecidosService {
       },
     });
 
-    if (!numericSearch) {
-      return resultadosPadrao;
-    }
-
-    const documentosEncontrados = await this.prisma.$queryRaw<
-      Array<{ id: string }>
-    >`
-      SELECT id
-      FROM favorecidos
-      WHERE regexp_replace(documento, '\\D', '', 'g')
-      LIKE ${`%${numericSearch}%`}
-    `;
-
-    const idsPorDocumentoNormalizado = documentosEncontrados.map(
-      (registro) => registro.id,
-    );
-
-    if (!idsPorDocumentoNormalizado.length) {
-      return resultadosPadrao;
-    }
-
-    const filtrosComplementares: Prisma.FavorecidoWhereInput[] = [];
-
-    if (filters.tipo && filters.tipo !== 'Todos') {
-      filtrosComplementares.push({
-        tipoCadastro: filters.tipo,
-      });
-    }
-
-    if (filters.status && filters.status !== 'Todos') {
-      filtrosComplementares.push({
-        status: filters.status,
-      });
-    }
-
-    if (
-      filters.situacaoEspecial &&
-      filters.situacaoEspecial !== 'Todas'
-    ) {
-      filtrosComplementares.push({
-        situacaoEspecial: filters.situacaoEspecial,
-      });
-    }
-
-    if (filters.onlyReview) {
-      filtrosComplementares.push({
-        contas: {
-          some: {
-            statusValidacao: 'Pendente',
-          },
-        },
-      });
-    }
-
-    filtrosComplementares.push({
-      id: {
-        in: idsPorDocumentoNormalizado,
-      },
-    });
-
-    const resultadosDocumentoNormalizado =
-      await this.prisma.favorecido.findMany({
-        where: {
-          AND: filtrosComplementares,
-        },
-        include: {
-          contas: true,
-        },
-        orderBy: {
-          nome: 'asc',
-        },
-      });
-
-    const resultadosUnicos = new Map();
-
-    for (const favorecido of resultadosPadrao) {
-      resultadosUnicos.set(favorecido.id, favorecido);
-    }
-
-    for (const favorecido of resultadosDocumentoNormalizado) {
-      resultadosUnicos.set(favorecido.id, favorecido);
-    }
-
-    return [...resultadosUnicos.values()].sort((a, b) =>
-      a.nome.localeCompare(b.nome, 'pt-BR'),
-    );
+    finalFavorecidos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    return finalFavorecidos;
   }
 
   async stats(): Promise<StatsResult> {
