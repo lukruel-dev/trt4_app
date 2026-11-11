@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import {
+  maskDocumento,
+  validateCpf,
+  validateCnpj,
+  normalizeTipoConta,
+} from '@/lib/documentos';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +17,21 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    const tipoDoc = body.tipoDocumento || 'CPF';
+    let formattedDoc = body.documento;
+    if (body.documento !== undefined && body.documento !== null) {
+      const rawDoc = String(body.documento).trim();
+      const isDocValid =
+        tipoDoc === 'CNPJ' ? validateCnpj(rawDoc) : validateCpf(rawDoc);
+      if (!isDocValid) {
+        return NextResponse.json(
+          { error: `${tipoDoc} informado (${rawDoc || 'vazio'}) é inválido.` },
+          { status: 400 },
+        );
+      }
+      formattedDoc = maskDocumento(rawDoc, tipoDoc);
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       await tx.favorecido.update({
         where: {
@@ -19,8 +40,8 @@ export async function PATCH(
         data: {
           nome: body.nome,
           tipoCadastro: body.tipoCadastro,
-          tipoDocumento: body.tipoDocumento,
-          documento: body.documento,
+          tipoDocumento: tipoDoc,
+          documento: formattedDoc,
           status: body.status,
           situacaoEspecial: body.situacaoEspecial ?? null,
           observacaoOperacional: body.observacaoOperacional ?? null,
@@ -46,11 +67,21 @@ export async function PATCH(
             }
           }
 
+          const titularTipo = conta.titularContaDocumento
+            ? conta.titularTipoDocumento || 'CPF'
+            : null;
+          const titularDoc = conta.titularContaDocumento
+            ? maskDocumento(conta.titularContaDocumento, titularTipo || 'CPF')
+            : null;
+
           return {
             ...conta,
             conta: numConta || null,
             contaNumero: numConta || null,
             contaDigito: digito || null,
+            tipoConta: normalizeTipoConta(conta.tipoConta),
+            titularContaDocumento: titularDoc,
+            titularTipoDocumento: titularTipo,
           };
         },
       );
@@ -81,7 +112,9 @@ export async function PATCH(
             conta: nova.conta ?? contaAtual.conta,
             contaNumero: nova.contaNumero ?? contaAtual.contaNumero,
             contaDigito: nova.contaDigito ?? contaAtual.contaDigito,
-            tipoConta: nova.tipoConta ?? contaAtual.tipoConta,
+            tipoConta: nova.tipoConta
+              ? normalizeTipoConta(nova.tipoConta)
+              : contaAtual.tipoConta,
             contaPreferencial:
               typeof nova.contaPreferencial === 'boolean'
                 ? nova.contaPreferencial
@@ -116,7 +149,7 @@ export async function PATCH(
             conta: conta.conta || null,
             contaNumero: conta.contaNumero || null,
             contaDigito: conta.contaDigito || null,
-            tipoConta: conta.tipoConta || null,
+            tipoConta: normalizeTipoConta(conta.tipoConta),
             contaPreferencial: !!conta.contaPreferencial,
             titularConfirmado: !!conta.titularConfirmado,
             titularContaNome: conta.titularContaNome || null,

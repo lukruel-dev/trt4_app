@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import {
+  maskDocumento,
+  validateCpf,
+  validateCnpj,
+  normalizeTipoConta,
+} from '@/lib/documentos';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,12 +197,26 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    const tipoDoc = body.tipoDocumento || 'CPF';
+    const rawDoc = (body.documento || '').trim();
+    const isDocValid =
+      tipoDoc === 'CNPJ' ? validateCnpj(rawDoc) : validateCpf(rawDoc);
+
+    if (!isDocValid) {
+      return NextResponse.json(
+        { error: `${tipoDoc} informado (${rawDoc || 'vazio'}) é inválido.` },
+        { status: 400 },
+      );
+    }
+
+    const formattedDoc = maskDocumento(rawDoc, tipoDoc);
+
     const created = await prisma.favorecido.create({
       data: {
         nome: body.nome,
         tipoCadastro: body.tipoCadastro,
-        tipoDocumento: body.tipoDocumento,
-        documento: body.documento,
+        tipoDocumento: tipoDoc,
+        documento: formattedDoc,
         status: body.status || 'Ativo',
         situacaoEspecial: body.situacaoEspecial || null,
         observacaoOperacional: body.observacaoOperacional || null,
@@ -213,6 +233,13 @@ export async function POST(request: NextRequest) {
               }
             }
 
+            const titularTipo = conta.titularContaDocumento
+              ? conta.titularTipoDocumento || 'CPF'
+              : null;
+            const titularDoc = conta.titularContaDocumento
+              ? maskDocumento(conta.titularContaDocumento, titularTipo || 'CPF')
+              : null;
+
             return {
               bancoNome: conta.bancoNome || null,
               bancoCodigo: conta.bancoCodigo || null,
@@ -221,12 +248,12 @@ export async function POST(request: NextRequest) {
               conta: numConta || null,
               contaNumero: numConta || null,
               contaDigito: digito || null,
-              tipoConta: conta.tipoConta || null,
+              tipoConta: normalizeTipoConta(conta.tipoConta),
               contaPreferencial: !!conta.contaPreferencial,
               titularConfirmado: !!conta.titularConfirmado,
               titularContaNome: conta.titularContaNome || null,
-              titularContaDocumento: conta.titularContaDocumento || null,
-              titularTipoDocumento: conta.titularTipoDocumento || null,
+              titularContaDocumento: titularDoc,
+              titularTipoDocumento: titularTipo,
               statusValidacao: conta.statusValidacao || 'Pendente',
               fonte: conta.fonte || 'Cadastro manual',
             };

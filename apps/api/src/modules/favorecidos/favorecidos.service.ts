@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import {
+  maskDocumento,
+  normalizeTipoConta,
+} from '../../common/documentos';
 
 type ListFilters = {
   search?: string;
@@ -227,12 +231,15 @@ export class FavorecidosService {
   }
 
   async create(body: any) {
+    const tipoDoc = body.tipoDocumento || 'CPF';
+    const formattedDoc = maskDocumento(body.documento, tipoDoc);
+
     return this.prisma.favorecido.create({
       data: {
         nome: body.nome,
         tipoCadastro: body.tipoCadastro,
-        tipoDocumento: body.tipoDocumento,
-        documento: body.documento,
+        tipoDocumento: tipoDoc,
+        documento: formattedDoc,
         status: body.status || 'Ativo',
         situacaoEspecial: body.situacaoEspecial || null,
         observacaoOperacional: body.observacaoOperacional || null,
@@ -245,12 +252,19 @@ export class FavorecidosService {
             conta: conta.conta || null,
             contaNumero: conta.contaNumero || null,
             contaDigito: conta.contaDigito || null,
-            tipoConta: conta.tipoConta || null,
+            tipoConta: normalizeTipoConta(conta.tipoConta),
             contaPreferencial: !!conta.contaPreferencial,
             titularConfirmado: !!conta.titularConfirmado,
             titularContaNome: conta.titularContaNome || null,
-            titularContaDocumento: conta.titularContaDocumento || null,
-            titularTipoDocumento: conta.titularTipoDocumento || null,
+            titularContaDocumento: conta.titularContaDocumento
+              ? maskDocumento(
+                  conta.titularContaDocumento,
+                  conta.titularTipoDocumento || 'CPF',
+                )
+              : null,
+            titularTipoDocumento: conta.titularContaDocumento
+              ? conta.titularTipoDocumento || 'CPF'
+              : null,
             statusValidacao: conta.statusValidacao || 'Pendente',
             fonte: conta.fonte || 'Cadastro manual',
           })),
@@ -263,6 +277,11 @@ export class FavorecidosService {
   }
 
   async update(id: string, body: any) {
+    const tipoDoc = body.tipoDocumento || 'CPF';
+    const formattedDoc = body.documento
+      ? maskDocumento(body.documento, tipoDoc)
+      : undefined;
+
     return this.prisma.$transaction(async (tx) => {
       await tx.favorecido.update({
         where: {
@@ -271,8 +290,8 @@ export class FavorecidosService {
         data: {
           nome: body.nome,
           tipoCadastro: body.tipoCadastro,
-          tipoDocumento: body.tipoDocumento,
-          documento: body.documento,
+          tipoDocumento: tipoDoc,
+          documento: formattedDoc,
           status: body.status,
           situacaoEspecial: body.situacaoEspecial ?? null,
           observacaoOperacional: body.observacaoOperacional ?? null,
@@ -313,7 +332,9 @@ export class FavorecidosService {
             conta: nova.conta ?? contaAtual.conta,
             contaNumero: nova.contaNumero ?? contaAtual.contaNumero,
             contaDigito: nova.contaDigito ?? contaAtual.contaDigito,
-            tipoConta: nova.tipoConta ?? contaAtual.tipoConta,
+            tipoConta: nova.tipoConta
+              ? normalizeTipoConta(nova.tipoConta)
+              : contaAtual.tipoConta,
             contaPreferencial:
               typeof nova.contaPreferencial === 'boolean'
                 ? nova.contaPreferencial
@@ -324,8 +345,12 @@ export class FavorecidosService {
                 : contaAtual.titularConfirmado,
             titularContaNome:
               nova.titularContaNome ?? contaAtual.titularContaNome,
-            titularContaDocumento:
-              nova.titularContaDocumento ?? contaAtual.titularContaDocumento,
+            titularContaDocumento: nova.titularContaDocumento
+              ? maskDocumento(
+                  nova.titularContaDocumento,
+                  nova.titularTipoDocumento || 'CPF',
+                )
+              : contaAtual.titularContaDocumento,
             titularTipoDocumento:
               nova.titularTipoDocumento ?? contaAtual.titularTipoDocumento,
             statusValidacao:
@@ -348,11 +373,16 @@ export class FavorecidosService {
             conta: conta.conta || null,
             contaNumero: conta.contaNumero || null,
             contaDigito: conta.contaDigito || null,
-            tipoConta: conta.tipoConta || null,
+            tipoConta: normalizeTipoConta(conta.tipoConta),
             contaPreferencial: !!conta.contaPreferencial,
             titularConfirmado: !!conta.titularConfirmado,
             titularContaNome: conta.titularContaNome || null,
-            titularContaDocumento: conta.titularContaDocumento || null,
+            titularContaDocumento: conta.titularContaDocumento
+              ? maskDocumento(
+                  conta.titularContaDocumento,
+                  conta.titularTipoDocumento || 'CPF',
+                )
+              : null,
             titularTipoDocumento: conta.titularTipoDocumento || null,
             statusValidacao: conta.statusValidacao || 'Pendente',
             fonte: conta.fonte || 'Cadastro manual',

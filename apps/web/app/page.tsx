@@ -2,10 +2,16 @@
 
 import { CSSProperties, ReactNode, useEffect, useRef, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import {
+  maskDocumento,
+  getDocumentoValidation,
+  normalizeTipoConta,
+} from '@/lib/documentos';
 
 const API_URL = '/api';
 
 const tipos = ['Todos', 'Advogado', 'Associação', 'Perito', 'Outros'] as const;
+const tiposConta = ['Conta Corrente', 'Conta Poupança'] as const;
 const situacoesEspeciais = [
   '',
   'SUCESSAO',
@@ -27,7 +33,7 @@ const emptyConta = {
   conta: '',
   contaNumero: '',
   contaDigito: '',
-  tipoConta: '',
+  tipoConta: 'Conta Corrente',
   contaPreferencial: false,
   titularConfirmado: false,
   titularContaNome: '',
@@ -65,6 +71,11 @@ function normalizeConta(conta: any) {
       ? raw.split('-')[1]?.trim()
       : conta.contaDigito ?? '';
 
+  const titularTipoDoc = conta.titularTipoDocumento ?? 'CPF';
+  const titularDoc = conta.titularContaDocumento
+    ? maskDocumento(conta.titularContaDocumento, titularTipoDoc)
+    : '';
+
   return {
     id: conta.id,
     bancoNome: conta.bancoNome ?? '',
@@ -74,24 +85,25 @@ function normalizeConta(conta: any) {
     conta: contaLimpa,
     contaNumero: contaLimpa,
     contaDigito: digitoDetectado,
-    tipoConta: conta.tipoConta ?? '',
+    tipoConta: normalizeTipoConta(conta.tipoConta),
     contaPreferencial: !!conta.contaPreferencial,
     titularConfirmado: !!conta.titularConfirmado,
     titularContaNome: conta.titularContaNome ?? '',
-    titularContaDocumento: conta.titularContaDocumento ?? '',
-    titularTipoDocumento: conta.titularTipoDocumento ?? 'CPF',
+    titularContaDocumento: titularDoc,
+    titularTipoDocumento: titularTipoDoc,
     statusValidacao: conta.statusValidacao ?? 'Pendente',
     fonte: conta.fonte ?? 'Cadastro manual',
   };
 }
 
 function normalizeForm(item: any) {
+  const tipoDoc = item.tipoDocumento || 'CPF';
   return {
     id: item.id ?? '',
     nome: item.nome ?? '',
     tipoCadastro: item.tipoCadastro || 'Advogado',
-    tipoDocumento: item.tipoDocumento || 'CPF',
-    documento: item.documento ?? '',
+    tipoDocumento: tipoDoc,
+    documento: maskDocumento(item.documento ?? '', tipoDoc),
     status: item.status || 'Ativo',
     situacaoEspecial: item.situacaoEspecial ?? '',
     observacaoOperacional: item.observacaoOperacional ?? '',
@@ -102,8 +114,10 @@ function normalizeForm(item: any) {
 }
 
 function buildPayload(form: any) {
+  const tipoDoc = form.tipoDocumento || 'CPF';
   return {
     ...form,
+    documento: maskDocumento(form.documento, tipoDoc),
     situacaoEspecial: form.situacaoEspecial || null,
     observacaoOperacional: form.observacaoOperacional?.trim() || null,
     contas: (form.contas || []).map((conta: any) => {
@@ -118,16 +132,21 @@ function buildPayload(form: any) {
         }
       }
 
+      const titularTipo = conta.titularContaDocumento
+        ? conta.titularTipoDocumento || 'CPF'
+        : null;
+
       return {
         ...conta,
+        tipoConta: normalizeTipoConta(conta.tipoConta),
         conta: numConta || null,
         contaNumero: numConta || null,
         contaDigito: digito || null,
         titularContaNome: conta.titularContaNome?.trim() || null,
-        titularContaDocumento: conta.titularContaDocumento?.trim() || null,
-        titularTipoDocumento: conta.titularContaDocumento
-          ? conta.titularTipoDocumento || 'CPF'
+        titularContaDocumento: conta.titularContaDocumento
+          ? maskDocumento(conta.titularContaDocumento, titularTipo || 'CPF')
           : null,
+        titularTipoDocumento: titularTipo,
       };
     }),
   };
@@ -190,6 +209,11 @@ export default function Home() {
     type?: 'success' | 'error';
   } | null>(null);
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const docValidation = getDocumentoValidation(
+    form.documento,
+    form.tipoDocumento ?? 'CPF',
+  );
 
   function showToast(message: string, type: 'success' | 'error' = 'success') {
     if (toastTimerRef.current) {
@@ -332,10 +356,12 @@ export default function Home() {
   }, []);
 
   function openNew() {
+    const defaultTipo = tipo === 'Todos' ? 'Advogado' : tipo;
+    const defaultTipoDoc = defaultTipo === 'Associação' ? 'CNPJ' : 'CPF';
     setForm({
       ...emptyForm,
-      tipoCadastro: tipo,
-      tipoDocumento: tipo === 'Associação' ? 'CNPJ' : 'CPF',
+      tipoCadastro: defaultTipo,
+      tipoDocumento: defaultTipoDoc,
       contas: [{ ...emptyConta }],
     });
 
@@ -420,6 +446,45 @@ export default function Home() {
   }
 
   async function save() {
+    if (!form.nome?.trim()) {
+      showToast('Por favor, informe o nome do favorecido.', 'error');
+      return;
+    }
+
+    const docVal = getDocumentoValidation(
+      form.documento,
+      form.tipoDocumento ?? 'CPF',
+    );
+
+    if (!docVal.isValid) {
+      showToast(
+        docVal.status === 'empty'
+          ? `Por favor, informe o ${form.tipoDocumento}.`
+          : `O ${form.tipoDocumento} informado (${form.documento || 'vazio'}) é inválido. Corrija para salvar.`,
+        'error',
+      );
+      return;
+    }
+
+    if (shouldShowTitularFields(form)) {
+      for (let i = 0; i < (form.contas || []).length; i++) {
+        const conta = form.contas[i];
+        if (conta.titularContaDocumento?.trim()) {
+          const titularVal = getDocumentoValidation(
+            conta.titularContaDocumento,
+            conta.titularTipoDocumento || 'CPF',
+          );
+          if (!titularVal.isValid) {
+            showToast(
+              `O documento do titular da Conta ${i + 1} (${conta.titularContaDocumento}) é inválido. Corrija para salvar.`,
+              'error',
+            );
+            return;
+          }
+        }
+      }
+    }
+
     const method = form.id ? 'PATCH' : 'POST';
     const url = form.id
       ? `${API_URL}/favorecidos/${form.id}`
@@ -435,7 +500,8 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error('Não foi possível salvar o registro.');
+        const errJson = await response.json().catch(() => null);
+        throw new Error(errJson?.error || 'Não foi possível salvar o registro.');
       }
 
       const data = await response.json();
@@ -452,9 +518,15 @@ export default function Home() {
       ]);
 
       setSelected(data);
+      showToast('Registro salvo com sucesso!');
     } catch (error) {
       console.error(error);
-      alert('Não foi possível salvar o registro.');
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível salvar o registro.',
+        'error',
+      );
     }
   }
 
@@ -841,7 +913,8 @@ export default function Home() {
 
                               <div style={styles.resultDocument}>
                                 Código {conta.bancoCodigo || '—'} ·{' '}
-                                {conta.tipoConta || 'Tipo não informado'}
+                                {normalizeTipoConta(conta.tipoConta) ||
+                                  'Tipo não informado'}
                               </div>
                             </div>
 
@@ -994,12 +1067,14 @@ export default function Home() {
               <Field label="Tipo de documento" styles={styles}>
                 <select
                   value={form.tipoDocumento ?? 'CPF'}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const newTipo = event.target.value;
                     setForm({
                       ...form,
-                      tipoDocumento: event.target.value,
-                    })
-                  }
+                      tipoDocumento: newTipo,
+                      documento: maskDocumento(form.documento, newTipo),
+                    });
+                  }}
                   style={styles.input}
                 >
                   <option>CPF</option>
@@ -1007,17 +1082,101 @@ export default function Home() {
                 </select>
               </Field>
 
-              <Field label="CPF / CNPJ" styles={styles}>
+              <Field
+                label={form.tipoDocumento === 'CNPJ' ? 'CNPJ' : 'CPF'}
+                styles={styles}
+              >
                 <input
                   value={form.documento ?? ''}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const masked = maskDocumento(
+                      event.target.value,
+                      form.tipoDocumento ?? 'CPF',
+                    );
                     setForm({
                       ...form,
-                      documento: event.target.value,
-                    })
+                      documento: masked,
+                    });
+                  }}
+                  onBlur={() => {
+                    const masked = maskDocumento(
+                      form.documento,
+                      form.tipoDocumento ?? 'CPF',
+                    );
+                    if (masked !== form.documento) {
+                      setForm({
+                        ...form,
+                        documento: masked,
+                      });
+                    }
+                  }}
+                  placeholder={
+                    form.tipoDocumento === 'CNPJ'
+                      ? '00.000.000/0001-00'
+                      : '000.000.000-00'
                   }
-                  style={styles.input}
+                  style={{
+                    ...styles.input,
+                    ...(docValidation.status === 'invalid'
+                      ? {
+                          borderColor: '#ef4444',
+                          boxShadow: '0 0 0 1px #ef4444',
+                        }
+                      : docValidation.status === 'valid'
+                      ? {
+                          borderColor: '#10b981',
+                        }
+                      : {}),
+                  }}
                 />
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    marginTop: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    color:
+                      docValidation.status === 'valid'
+                        ? '#10b981'
+                        : docValidation.status === 'invalid'
+                        ? '#ef4444'
+                        : colors.muted,
+                  }}
+                >
+                  {docValidation.status === 'valid' && (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#10b981"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                  {docValidation.status === 'invalid' && (
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#ef4444"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  )}
+                  <span>{docValidation.message}</span>
+                </div>
               </Field>
 
               <Field label="Situação especial" styles={styles}>
@@ -1161,13 +1320,22 @@ export default function Home() {
                     </Field>
 
                     <Field label="Tipo de conta" styles={styles}>
-                      <input
-                        value={conta.tipoConta ?? ''}
+                      <select
+                        value={normalizeTipoConta(conta.tipoConta)}
                         onChange={(event) =>
                           updateConta(index, 'tipoConta', event.target.value)
                         }
                         style={styles.input}
-                      />
+                      >
+                        <option value="Conta Corrente">Conta Corrente</option>
+                        <option value="Conta Poupança">Conta Poupança</option>
+                        {conta.tipoConta &&
+                          !['Conta Corrente', 'Conta Poupança', 'Corrente', 'Poupança'].includes(
+                            conta.tipoConta,
+                          ) && (
+                            <option value={conta.tipoConta}>{conta.tipoConta}</option>
+                          )}
+                      </select>
                     </Field>
 
                     <Field label="Status de validação" styles={styles}>
@@ -1222,13 +1390,21 @@ export default function Home() {
                         >
                           <select
                             value={conta.titularTipoDocumento ?? 'CPF'}
-                            onChange={(event) =>
-                              updateConta(
-                                index,
-                                'titularTipoDocumento',
-                                event.target.value,
-                              )
-                            }
+                            onChange={(event) => {
+                              const newTipo = event.target.value;
+                              setForm((prev: any) => {
+                                const contas = [...prev.contas];
+                                contas[index] = {
+                                  ...contas[index],
+                                  titularTipoDocumento: newTipo,
+                                  titularContaDocumento: maskDocumento(
+                                    contas[index].titularContaDocumento,
+                                    newTipo,
+                                  ),
+                                };
+                                return { ...prev, contas };
+                              });
+                            }}
                             style={styles.input}
                           >
                             <option>CPF</option>
@@ -1242,15 +1418,82 @@ export default function Home() {
                         >
                           <input
                             value={conta.titularContaDocumento ?? ''}
-                            onChange={(event) =>
+                            onChange={(event) => {
+                              const masked = maskDocumento(
+                                event.target.value,
+                                conta.titularTipoDocumento || 'CPF',
+                              );
                               updateConta(
                                 index,
                                 'titularContaDocumento',
-                                event.target.value,
-                              )
+                                masked,
+                              );
+                            }}
+                            onBlur={() => {
+                              const masked = maskDocumento(
+                                conta.titularContaDocumento,
+                                conta.titularTipoDocumento || 'CPF',
+                              );
+                              if (masked !== conta.titularContaDocumento) {
+                                updateConta(
+                                  index,
+                                  'titularContaDocumento',
+                                  masked,
+                                );
+                              }
+                            }}
+                            placeholder={
+                              conta.titularTipoDocumento === 'CNPJ'
+                                ? '00.000.000/0001-00'
+                                : '000.000.000-00'
                             }
-                            style={styles.input}
+                            style={{
+                              ...styles.input,
+                              ...(conta.titularContaDocumento &&
+                              !getDocumentoValidation(
+                                conta.titularContaDocumento,
+                                conta.titularTipoDocumento || 'CPF',
+                              ).isValid
+                                ? {
+                                    borderColor: '#ef4444',
+                                    boxShadow: '0 0 0 1px #ef4444',
+                                  }
+                                : conta.titularContaDocumento &&
+                                  getDocumentoValidation(
+                                    conta.titularContaDocumento,
+                                    conta.titularTipoDocumento || 'CPF',
+                                  ).isValid
+                                ? { borderColor: '#10b981' }
+                                : {}),
+                            }}
                           />
+                          {conta.titularContaDocumento ? (
+                            <div
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                marginTop: 4,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                color: getDocumentoValidation(
+                                  conta.titularContaDocumento,
+                                  conta.titularTipoDocumento || 'CPF',
+                                ).isValid
+                                  ? '#10b981'
+                                  : '#ef4444',
+                              }}
+                            >
+                              <span>
+                                {
+                                  getDocumentoValidation(
+                                    conta.titularContaDocumento,
+                                    conta.titularTipoDocumento || 'CPF',
+                                  ).message
+                                }
+                              </span>
+                            </div>
+                          ) : null}
                         </Field>
                       </>
                     ) : null}
